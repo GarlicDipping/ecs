@@ -43,10 +43,9 @@ namespace Leopotam.Ecs.Garlic
         public static object Get(in this EcsEntity entity, Type t)
         {
             var name = nameof(EcsEntityExtensions.Get);
-            var method = typeof(EcsEntityExtensions).GetMethod(name,
-                BindingFlags.Public | BindingFlags.Static);
+            var method = typeof(EcsEntityExtensions).GetMethod(name, BindingFlags.Public | BindingFlags.Static);
             var generic = method.MakeGenericMethod(t);
-            return generic.Invoke(entity, new object[] {entity});
+            return generic.Invoke(null, new object[] {entity});
         }
     }
 }
