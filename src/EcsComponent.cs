@@ -7,6 +7,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Leopotam.Ecs.Garlic;
 
 // ReSharper disable ClassNeverInstantiated.Global
 
@@ -39,6 +40,7 @@ namespace Leopotam.Ecs {
         public static readonly Type Type;
         public static readonly bool IsIgnoreInFilter;
         public static readonly bool IsAutoReset;
+        public static readonly bool IsSerializable;
         // ReSharper restore StaticMemberInGenericType
 
         static EcsComponentType () {
@@ -46,9 +48,13 @@ namespace Leopotam.Ecs {
             Type = typeof (T);
             IsIgnoreInFilter = typeof (IEcsIgnoreInFilter).IsAssignableFrom (Type);
             IsAutoReset = typeof (IEcsAutoReset<T>).IsAssignableFrom (Type);
+            IsSerializable = typeof (IEcsSerializable<T>).IsAssignableFrom (Type);
 #if DEBUG
             if (!IsAutoReset && Type.GetInterface ("IEcsAutoReset`1") != null) {
                 throw new Exception ($"IEcsAutoReset should have <{typeof (T).Name}> constraint for component \"{typeof (T).Name}\".");
+            }
+            if (!IsSerializable && Type.GetInterface ("IEcsSerializable`1") != null) {
+                throw new Exception ($"IEcsSerializable should have <{typeof (T).Name}> constraint for component \"{typeof (T).Name}\".");
             }
 #endif
         }
@@ -68,6 +74,9 @@ namespace Leopotam.Ecs {
         void Recycle (int idx);
         int New ();
         void CopyData (int srcIdx, int dstIdx);
+        bool IsSerializable();
+        void InvokeSerialize(int componentIdx, System.IO.BinaryWriter writer);
+        void InvokeDeserialize(int componentIdx, System.IO.BinaryReader reader);
     }
 
     /// <summary>
@@ -122,6 +131,8 @@ namespace Leopotam.Ecs {
 #endif
     public sealed class EcsComponentPool<T> : IEcsComponentPool where T : struct {
         delegate void AutoResetHandler (ref T component);
+        delegate void SerializeHandler (ref T component, System.IO.BinaryWriter writer);
+        delegate void DeserializeHandler (ref T component, System.IO.BinaryReader reader);
 
         public Type ItemType { get; }
         public T[] Items = new T[128];
@@ -129,8 +140,12 @@ namespace Leopotam.Ecs {
         int _itemsCount;
         int _reservedItemsCount;
         readonly AutoResetHandler _autoReset;
+        readonly SerializeHandler _serialize;
+        readonly DeserializeHandler _deserialize;
+
 #if ENABLE_IL2CPP && !UNITY_EDITOR
         T _autoresetFakeInstance;
+        T _serializableFakeInstance;
 #endif
 
         internal EcsComponentPool () {
@@ -153,6 +168,57 @@ namespace Leopotam.Ecs {
 #endif
                     autoResetMethod);
             }
+            
+            if (EcsComponentType<T>.IsSerializable) {
+                var serializeMethod = typeof (T).GetMethod (nameof (GarlicEcsSerializeHelper.SerializeComponent));
+                var deserializeMethod = typeof (T).GetMethod (nameof (IEcsSerializable<T>.Deserialize));
+#if DEBUG
+                if (serializeMethod == null || deserializeMethod == null) {
+                    throw new Exception (
+                        $"IEcsSerializable<{typeof (T).Name}> explicit implementation not supported, use implicit instead.");
+                }
+#endif
+                _serialize = (SerializeHandler) Delegate.CreateDelegate (
+                    typeof (SerializeHandler),
+#if ENABLE_IL2CPP && !UNITY_EDITOR
+                    _serializableFakeInstance,
+#else
+                    null,
+#endif
+                    serializeMethod);
+                _deserialize = (DeserializeHandler) Delegate.CreateDelegate (
+                    typeof (DeserializeHandler),
+#if ENABLE_IL2CPP && !UNITY_EDITOR
+                    _serializableFakeInstance,
+#else
+                    null,
+#endif
+                    deserializeMethod);
+            }
+        }
+
+        public bool IsSerializable() {
+            return EcsComponentType<T>.IsSerializable;
+        }
+
+        public void InvokeSerialize(int componentIdx, System.IO.BinaryWriter writer) {
+            if (EcsComponentType<T>.IsSerializable == false) {
+                throw new Exception("Serialize request to non-serializable component!");
+            }
+            if (componentIdx < 0 || componentIdx + 1 >= Items.Length) {
+                throw new IndexOutOfRangeException("Wrong component index input!");
+            }
+            _serialize?.Invoke(ref Items[componentIdx], writer);
+        }
+        
+        public void InvokeDeserialize(int componentIdx, System.IO.BinaryReader reader) {
+            if (EcsComponentType<T>.IsSerializable == false) {
+                throw new Exception("Deserialize request to non-serializable component!");
+            }
+            if (componentIdx < 0 || componentIdx + 1 >= Items.Length) {
+                throw new IndexOutOfRangeException("Wrong component index input!");
+            }
+            _deserialize?.Invoke(ref Items[componentIdx], reader);
         }
 
         /// <summary>
