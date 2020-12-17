@@ -5,6 +5,7 @@
 // ----------------------------------------------------------------------------
 
 using System;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Leopotam.Ecs.Garlic;
@@ -170,7 +171,8 @@ namespace Leopotam.Ecs {
             }
             
             if (EcsComponentType<T>.IsSerializable) {
-                var serializeMethod = typeof (T).GetMethod (nameof (GarlicEcsSerializeHelper.SerializeComponent));
+                var serializeMethod = typeof (GarlicEcsSerializeHelper).GetMethod (nameof (GarlicEcsSerializeHelper.SerializeComponent))
+                    .MakeGenericMethod(typeof(T));
                 var deserializeMethod = typeof (T).GetMethod (nameof (IEcsSerializable<T>.Deserialize));
 #if DEBUG
                 if (serializeMethod == null || deserializeMethod == null) {
