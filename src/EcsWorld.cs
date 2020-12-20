@@ -397,6 +397,27 @@ namespace Leopotam.Ecs {
             }
             return pool;
         }
+
+        // public IEcsComponentPool GetOrCreatePool(System.Type type)
+        // {
+        //     bool isStruct = type.IsValueType && !type.IsPrimitive;
+        //     if (isStruct == false)
+        //     {
+        //         throw new Exception("Only struct type allowed!");                
+        //     }
+        //
+        //     foreach (var componentPool in ComponentPools)
+        //     {
+        //         if (componentPool.ItemType == type)
+        //         {
+        //             return componentPool;
+        //         }
+        //     }
+        //     
+        //     var getPoolMethod = typeof(EcsWorld).GetMethod(nameof(EcsWorld.GetPool))
+        //         .MakeGenericMethod(type);
+        //     return (IEcsComponentPool)getPoolMethod.Invoke(this, null);
+        // }
     }
 
     /// <summary>
