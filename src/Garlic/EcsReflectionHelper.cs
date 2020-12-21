@@ -12,6 +12,7 @@ namespace Leopotam.Ecs.Garlic
             if (typeIndex == -1)
             {
                 CallGenericStaticConstructor(typeof(EcsComponentType<>), componentType);
+                typeIndex = EcsComponentTypeIndexMap.GetComponentTypeIndex(componentType);
             }
 
             return typeIndex;
