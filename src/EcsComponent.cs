@@ -50,6 +50,7 @@ namespace Leopotam.Ecs {
             IsIgnoreInFilter = typeof (IEcsIgnoreInFilter).IsAssignableFrom (Type);
             IsAutoReset = typeof (IEcsAutoReset<T>).IsAssignableFrom (Type);
             IsSerializable = typeof (IEcsSerializable<T>).IsAssignableFrom (Type);
+            EcsComponentTypeIndexMap.Register(Type, TypeIndex);
 #if DEBUG
             if (!IsAutoReset && Type.GetInterface ("IEcsAutoReset`1") != null) {
                 throw new Exception ($"IEcsAutoReset should have <{typeof (T).Name}> constraint for component \"{typeof (T).Name}\".");
