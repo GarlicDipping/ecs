@@ -10,8 +10,7 @@ namespace Leopotam.Ecs.Garlic
         ///     만약 어떤 엔티티가 0번 컴포넌트를 붙이려 한다면 해당 Id를 가진 컴포넌트의 타입을 찾아 붙여줘야함
         /// </summary>
         /// <returns></returns>
-        int GetComponentTypeId();
-
+        short GetComponentTypeId();
         void Serialize(ref T component, BinaryWriter serializer);
         void Deserialize(ref T component, BinaryReader deserializer);
     }
