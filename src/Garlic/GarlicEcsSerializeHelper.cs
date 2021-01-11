@@ -21,5 +21,10 @@ namespace Leopotam.Ecs.Garlic
             writer.Write(componentSize);
             writer.Seek(0, SeekOrigin.End);
         }
+
+        public static bool GetIsDirty<T>(ref T component) where T : struct, IEcsSerializable<T>
+        {
+            return component.IsDirty;
+        }
     }
 }

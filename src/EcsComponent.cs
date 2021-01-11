@@ -77,6 +77,7 @@ namespace Leopotam.Ecs {
         int New ();
         void CopyData (int srcIdx, int dstIdx);
         bool IsSerializable();
+        bool IsComponentDirty(int componentIdx);
         void InvokeSerialize(int componentIdx, System.IO.BinaryWriter writer);
         void InvokeDeserialize(int componentIdx, System.IO.BinaryReader reader);
     }
@@ -136,6 +137,8 @@ namespace Leopotam.Ecs {
         delegate void SerializeHandler (ref T component, System.IO.BinaryWriter writer);
         delegate void DeserializeHandler (ref T component, System.IO.BinaryReader reader);
 
+        delegate bool GetIsDirtyHandler(ref T component);
+
         public Type ItemType { get; }
         public T[] Items = new T[128];
         int[] _reservedItems = new int[128];
@@ -144,6 +147,7 @@ namespace Leopotam.Ecs {
         readonly AutoResetHandler _autoReset;
         readonly SerializeHandler _serialize;
         readonly DeserializeHandler _deserialize;
+        readonly GetIsDirtyHandler _getIsDirty;
 
 #if ENABLE_IL2CPP && !UNITY_EDITOR
         T _autoresetFakeInstance;
@@ -197,11 +201,28 @@ namespace Leopotam.Ecs {
                     null,
 #endif
                     deserializeMethod);
+                
+                var getIsDirtyMethod = typeof (GarlicEcsSerializeHelper).GetMethod (nameof (GarlicEcsSerializeHelper.GetIsDirty))
+                    .MakeGenericMethod(typeof(T));
+                _getIsDirty = (GetIsDirtyHandler) Delegate.CreateDelegate (
+                    typeof (GetIsDirtyHandler),
+#if ENABLE_IL2CPP && !UNITY_EDITOR
+                    _serializableFakeInstance,
+#else
+                    null,
+#endif
+                    getIsDirtyMethod
+                    );
             }
         }
 
         public bool IsSerializable() {
             return EcsComponentType<T>.IsSerializable;
+        }
+
+        public bool IsComponentDirty(int componentIdx)
+        {
+            return _getIsDirty.Invoke(ref Items[componentIdx]);
         }
 
         public void InvokeSerialize(int componentIdx, System.IO.BinaryWriter writer) {

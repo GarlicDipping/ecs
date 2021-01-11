@@ -27,9 +27,12 @@ namespace Leopotam.Ecs.Garlic
                 var attatchedComponentIdx = entityData.Components[i];
                 if (entity.Owner.ComponentPools[attatchedComponentIdx].IsSerializable())
                 {
-                    serializableComponentsCount++;
                     var itemIndex = entityData.Components[i + 1];
-                    entity.Owner.ComponentPools[attatchedComponentIdx].InvokeSerialize(itemIndex, writer);
+                    if (entity.Owner.ComponentPools[attatchedComponentIdx].IsComponentDirty(itemIndex))
+                    {
+                        serializableComponentsCount++;
+                        entity.Owner.ComponentPools[attatchedComponentIdx].InvokeSerialize(itemIndex, writer);
+                    }
                 }
             }
 

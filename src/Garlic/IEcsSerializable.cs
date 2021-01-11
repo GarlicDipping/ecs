@@ -4,6 +4,7 @@ namespace Leopotam.Ecs.Garlic
 {
     public interface IEcsSerializable<T> where T : struct
     {
+        bool IsDirty { get; }
         /// <summary>
         ///     컴포넌트를 검색하기 위한 유니크 Id
         ///     ex) TransformComponent의 Id는 서버/클라에서 모두 0이라 가정
