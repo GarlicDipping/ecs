@@ -1,10 +1,10 @@
 {
     "name": "com.leopotam.ecs",
     "author": "Leopotam",
-    "displayName": "LeoECS Core",
+    "displayName": "LeoECS Core(mod by GarlicDipp)",
     "description": "LeoECS is simple lightweight C# Entity Component System framework based on structs. Performance, zero/small memory allocations/footprint - main goals of this project.",
     "unity": "2019.1",
-    "version": "2020.11.22",
+    "version": "2021.01.12.1",
     "keywords": [
         "leoecs",
         "ecs",
