@@ -7,6 +7,27 @@ namespace Leopotam.Ecs.Garlic
 {
     public static class GarlicEcsEntityExtensions
     {
+        public static bool IsEntityDirty(in this EcsEntity entity)
+        {
+            ref var entityData = ref entity.Owner.GetEntityData (entity);
+#if DEBUG
+            if (entityData.Gen != entity.Gen) { throw new Exception ("Cant add component to destroyed entity."); }
+#endif
+            bool isDirty = false;
+            // check already attached components.
+            for (int i = 0, iiMax = entityData.ComponentsCountX2; i < iiMax; i += 2)
+            {
+                var typeIdx = entityData.Components[i];
+                var componentIdx = entityData.Components[i + 1];
+                if (entity.Owner.ComponentPools[typeIdx].IsSerializable())
+                {
+                    isDirty |= entity.Owner.ComponentPools[typeIdx].IsComponentDirty(componentIdx);
+                }
+            }
+
+            return isDirty;
+        }
+        
         /// <summary>
         ///     Serialize all serializable components of this entity.
         /// </summary>
