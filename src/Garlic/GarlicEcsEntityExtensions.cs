@@ -39,7 +39,7 @@ namespace Leopotam.Ecs.Garlic
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void SerializeEntity(in this EcsEntity entity, BinaryWriter writer)
         {
-            var serializableComponentsCount = 0;
+            byte serializableComponentsCount = 0;
             var seekIndex = (int) writer.BaseStream.Length;
             writer.Write(serializableComponentsCount);
             ref var entityData = ref entity.Owner.GetEntityData(entity);
